@@ -76,10 +76,10 @@ def logs():
     return render_template("logs.html",logs=all_logs)
  
 
-def start_ngrok():
-    public_url = ngrok.connect(5000)
-    print(f"\n\nPublic URL (give this to your friend): {public_url}/arduino-webhook\n\n")
+#def start_ngrok():
+    #public_url = ngrok.connect(5000)
+   # print(f"\n\nPublic URL (give this to your friend): {public_url}/arduino-webhook\n\n")
 
-if __name__ == "__main__":
-    Thread(target=start_ngrok, daemon=True).start()
-    app.run(port=5000)
+#if __name__ == "__main__":
+    #Thread(target=start_ngrok, daemon=True).start()
+    #app.run(port=5000)
