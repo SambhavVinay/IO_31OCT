@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IoT Radar Object Detection</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Courier New", monospace;
+    }
+
+    body {
+      background: #0a0a12;
+      color: #00ff41;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    header {
+      font-size: 2.8rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+      color: #00ff41;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #00ff41;
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+      border-bottom: 1px solid #00ff41;
+      padding-bottom: 10px;
+    }
+
+    .dashboard {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .radar-section {
+      background: #0f0f1a;
+      border-radius: 4px;
+      padding: 25px;
+      border: 1px solid #00ff41;
+    }
+
+    .radar-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 0 auto;
+    }
+
+    #radar-canvas {
+      border: 1px solid #00ff41;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at center, 
+          #0a0a12 0%, 
+          #0f0f1a 70%,
+          #0a0a12 100%);
+    }
+
+    .controls {
+      margin: 25px 0;
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      color: #00ff41;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00ff41;
+    }
+
+    .stats-section {
+      background: #0f0f1a;
+      border-radius: 4px;
+      padding: 25px;
+      border: 1px solid #00ff41;
+      min-width: 300px;
+    }
+
+    .stats-grid {
+      display: grid;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: #0a0a12;
+      border: 1px solid #00ff41;
+      border-radius: 2px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #00ff41;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #00ff41;
+      margin-top: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .detection-list {
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      border: 1px solid #00ff41;
+      background: #0a0a12;
+      padding: 10px;
+    }
+
+    .detection-item {
+      background: #1a0a0a;
+      border: 1px solid #ff0000;
+      border-radius: 2px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      color: #ff0000;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+    }
+
+    .detection-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      background: #0a0a12;
+      color: #00ff41;
+      border: 1px solid #00ff41;
+      padding: 12px 25px;
+      border-radius: 2px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn:hover {
+      background: #00ff41;
+      color: #0a0a12;
+    }
+
+    .btn-secondary {
+      border: 1px solid #ff0000;
+      color: #ff0000;
+    }
+
+    .btn-secondary:hover {
+      background: #ff0000;
+      color: #0a0a12;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: #00ff41;
+      text-align: center;
+      border-top: 1px solid #00ff41;
+      padding-top: 15px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .radar-container {
+        width: 350px;
+        height: 350px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .radar-container {
+        width: 300px;
+        height: 300px;
+      }
+      
+      header {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>IoT RADAR SYSTEM</header>
+  <div class="subtitle">Real-time Object Detection & Monitoring</div>
+
+  <div class="dashboard">
+    <!-- Radar Display Section -->
+    <div class="radar-section">
+      <h2 style="color: #00ff41; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;">LIVE RADAR DISPLAY</h2>
+      <div class="radar-container">
+        <canvas id="radar-canvas" width="400" height="400"></canvas>
+      </div>
+      
+      <div class="controls">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span id="status-text">SCANNING FOR OBJECTS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats & Detections Section -->
+    <div class="stats-section">
+      <h2 style="color: #00ff41; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px;">SYSTEM STATUS</h2>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="total-detections">0</div>
+          <div class="stat-label">Total Detections</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-value" id="active-objects">0</div>
+          <div class="stat-label">Active Objects</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-value" id="latest-distance">0</div>
+          <div class="stat-label">Latest Distance (cm)</div>
+        </div>
+      </div>
+
+      <h3 style="color: #00ff41; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Recent Detections</h3>
+      <div class="detection-list" id="detection-list">
+        <!-- Real detections will appear here -->
+      </div>
+
+      <div class="btn-group">
+        <a href="/logs" class="btn">View Full Logs</a>
+        <button class="btn btn-secondary" onclick="clearDisplay()">Clear Display</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 IoT Radar Detection System | Real Database-Driven Detection
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('radar-canvas');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radarRadius = 180;
+    
+    let sweepAngle = 0;
+    let activeDetections = []; // Stores current detections to display
+    let lastLogId = 0; // Track the last log ID we've processed
+
+    // Draw radar background
+    function drawRadarBackground() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw distance circles
+      ctx.strokeStyle = '#00ff41';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.8;
+      
+      for (let i = 1; i <= 4; i++) {
+        const radius = (radarRadius / 4) * i;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Distance labels
+        ctx.fillStyle = '#00ff41';
+        ctx.globalAlpha = 1;
+        ctx.font = '12px "Courier New", monospace';
+        ctx.fillText(`${i * 50}cm`, centerX + radius + 5, centerY);
+      }
+      
+      // Draw crosshairs
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(centerX, 20);
+      ctx.lineTo(centerX, canvas.height - 20);
+      ctx.moveTo(20, centerY);
+      ctx.lineTo(canvas.width - 20, centerY);
+      ctx.stroke();
+      
+      // Angle markers
+      ctx.globalAlpha = 1;
+      ctx.font = '10px "Courier New", monospace';
+      for (let angle = 0; angle < 360; angle += 45) {
+        const rad = angle * Math.PI / 180;
+        const x = centerX + (radarRadius + 15) * Math.sin(rad);
+        const y = centerY - (radarRadius + 15) * Math.cos(rad);
+        ctx.fillText(angle + '°', x - 10, y + 4);
+      }
+      
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw sweeping radar line
+    function drawSweepingLine() {
+      const endX = centerX + radarRadius * Math.sin(sweepAngle * Math.PI / 180);
+      const endY = centerY - radarRadius * Math.cos(sweepAngle * Math.PI / 180);
+      
+      ctx.strokeStyle = '#00ff41';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    }
+
+    // Draw detection with red ping effect
+    function drawDetection(distance, angle, timestamp) {
+      const maxDistance = 200; // Maximum distance in cm
+      const radius = (distance / maxDistance) * radarRadius;
+      const rad = angle * Math.PI / 180;
+      
+      const x = centerX + radius * Math.sin(rad);
+      const y = centerY - radius * Math.cos(rad);
+      
+      // Solid red dot
+      ctx.fillStyle = '#ff0000';
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    // Add detection to the display list
+    function addDetectionToDisplay(distance, angle, timestamp, logId) {
+      const detection = {
+        distance: distance,
+        angle: angle,
+        timestamp: timestamp,
+        logId: logId,
+        displayUntil: Date.now() + 5000 // Show for 5 seconds
+      };
+      
+      activeDetections.push(detection);
+      updateDetectionList();
+      updateStats();
+    }
+
+    // Update the detection list UI
+    function updateDetectionList() {
+      const list = document.getElementById('detection-list');
+      list.innerHTML = '';
+      
+      // Show only the 5 most recent detections
+      const recentDetections = activeDetections
+        .slice()
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 5);
+      
+      recentDetections.forEach(detection => {
+        const item = document.createElement('div');
+        item.className = 'detection-item';
+        const time = new Date(detection.timestamp).toLocaleTimeString();
+        item.textContent = `D: ${detection.distance}cm | T: ${time}`;
+        list.appendChild(item);
+      });
+    }
+
+    // Update statistics
+    function updateStats() {
+      document.getElementById('total-detections').textContent = activeDetections.length;
+      document.getElementById('active-objects').textContent = activeDetections.length;
+      
+      if (activeDetections.length > 0) {
+        const latest = activeDetections[activeDetections.length - 1];
+        document.getElementById('latest-distance').textContent = latest.distance;
+      }
+    }
+
+    // Check for new logs in the database
+    async function checkForNewLogs() {
+      try {
+        const response = await fetch('/logs-data');
+        const logs = await response.json();
+        
+        if (logs && logs.length > 0) {
+          const latestLog = logs[0]; // Most recent log
+          
+          // Check if this is a new log we haven't processed
+          if (latestLog.id > lastLogId) {
+            lastLogId = latestLog.id;
+            
+            // Convert value to distance and generate random angle (since your data doesn't have angle)
+            const distance = latestLog.value;
+            const angle = Math.floor(Math.random() * 360); // Random angle for demo
+            
+            // Add to radar display
+            addDetectionToDisplay(distance, angle, latestLog.updated_at, latestLog.id);
+            
+            // Update status
+            document.getElementById('status-text').textContent = 'OBJECT DETECTED!';
+            document.getElementById('status-text').style.color = '#ff0000';
+            
+            // Reset status after 2 seconds
+            setTimeout(() => {
+              document.getElementById('status-text').textContent = 'SCANNING FOR OBJECTS';
+              document.getElementById('status-text').style.color = '#00ff41';
+            }, 2000);
+          }
+        }
+      } catch (error) {
+        console.log('Error fetching logs:', error);
+      }
+    }
+
+    // Clear the display (doesn't delete database logs)
+    function clearDisplay() {
+      activeDetections = [];
+      updateDetectionList();
+      updateStats();
+    }
+
+    // Remove old detections after their display time expires
+    function cleanupOldDetections() {
+      const now = Date.now();
+      activeDetections = activeDetections.filter(detection => detection.displayUntil > now);
+      updateStats();
+    }
+
+    // Main animation loop
+    function animateRadar() {
+      drawRadarBackground();
+      drawSweepingLine();
+      
+      // Draw all active detections
+      activeDetections.forEach(detection => {
+        drawDetection(detection.distance, detection.angle, detection.timestamp);
+      });
+      
+      sweepAngle = (sweepAngle + 2) % 360;
+      requestAnimationFrame(animateRadar);
+    }
+
+    // Initialize everything
+    drawRadarBackground();
+    animateRadar();
+    
+    // Check for new database logs every second
+    setInterval(checkForNewLogs, 1000);
+    
+    // Clean up old detections every second
+    setInterval(cleanupOldDetections, 1000);
+    
+    // Initial check
+    checkForNewLogs();
+  </script>
+</body>
+</html>
